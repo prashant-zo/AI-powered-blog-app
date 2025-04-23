@@ -1,0 +1,38 @@
+# backend/.gitignore
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node Dependencies
+node_modules
+
+# Build Output / Compiled Files
+dist
+build
+*.tsbuildinfo
+
+# Wrangler / Cloudflare Temp Files
+.wrangler/
+
+# Environment Variables / Secrets (VERY IMPORTANT)
+.dev.vars
+.env
+.env.*
+!.env.example # Keep the example file in git
+
+# Prisma specific (if using SQLite locally for testing, etc.)
+# *.db
+# *.db-journal*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage

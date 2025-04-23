@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  reviewFeatures = ["driverAdapters"] 
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") 
+  directUrl = env("DIRECT_DATABASE_URL") 
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String    // Store hashed password
+  bio       String?
+  avatarUrl String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  content     String
+  published   Boolean    @default(false)
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  comments    Comment[]
+  likes       Like[]
+  bookmarks   Bookmark[]
+  // Add tags, categories etc. as needed
+}
+
+model Comment {
+   id        String   @id @default(cuid())
+   text      String
+   postId    String
+   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+   authorId  String
+   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+   createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) // User can like a post only once
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) // User can bookmark a post only once
+}
