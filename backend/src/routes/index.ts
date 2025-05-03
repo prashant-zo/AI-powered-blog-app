@@ -1,8 +1,9 @@
+// src/routes/index.ts
 import { Hono } from 'hono';
-import { type Env } from '../config/env'; 
+import { type Env } from '../config/env';
 
 import authRouter from './auth.routes';
-// import userRouter from './user.routes'; // Placeholder for user routes
+import userRouter from './user.routes'; // <-- Import the user router
 // import blogRouter from './blog.routes'; // Placeholder for blog routes
 // import aiRouter from './ai.routes';   // Placeholder for AI routes
 
@@ -14,13 +15,11 @@ const apiV1Router = new Hono<{ Bindings: Env }>();
 // Mount authentication routes under /api/v1/auth/*
 apiV1Router.route('/auth', authRouter);
 
-// Mount user profile routes under /api/v1/user/* (Example)
-// apiV1Router.route('/user', userRouter);
+// Mount user profile routes under /api/v1/user/*
+apiV1Router.route('/user', userRouter); // <-- Add this line
 
-// Mount blog post routes under /api/v1/blog/* (Example)
+// Mount other routes here when ready
 // apiV1Router.route('/blog', blogRouter);
-
-// Mount AI feature routes under /api/v1/ai/* (Example)
 // apiV1Router.route('/ai', aiRouter);
 
 

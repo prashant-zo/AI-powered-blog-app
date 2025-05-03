@@ -1,56 +1,67 @@
-import { type PrismaClient } from "@prisma/client/edge";
 import { HTTPException } from "hono/http-exception";
 import type { UpdateUserInput, UserIdParam } from "../schemas/user.schema";
 import { type Env } from "../config/env";
 
-interface IuserPrismaClient {
+interface UserProfilePrismaClient {
     user: {
-        findUniqueOrThrow: (...args: any[]) => Promise<any>;
-        update: (...args: any[]) => Promise<any>;
+        findUniqueOrThrow: (args: {
+            where: { id: string };
+            select?: any; 
+        }) => Promise<any>; 
+        update: (args: {
+            where: { id: string };
+            data: any; 
+            select?: any;
+        }) => Promise<any>; 
     }
 }
 
 export class UserService {
-    private prisma: IuserPrismaClient;
+    private prisma: UserProfilePrismaClient;
     private env: Env;
 
-    constructor(prisma: IuserPrismaClient, env: Env) {
+    constructor(prisma: UserProfilePrismaClient, env: Env) {
         this.prisma = prisma;
         this.env = env;
     }
 
     async getUserProfile(params: UserIdParam) {
-        console.log(`Fetching profile for user ID: ${params.id}`);
+        const userId = params.id;
+        console.log(`Fetching profile for user ID: ${userId}`);
         try {
             const user = await this.prisma.user.findUniqueOrThrow({
-                where: { id: params.id },
-                select: { 
+                where: { id: userId },
+                select: {
                     id: true,
-                    email: true, 
+                    email: true,
                     name: true,
                     bio: true,
                     avatarUrl: true,
                     createdAt: true,
                 }
             });
+            console.log(`Successfully fetched profile for user ID: ${userId}`);
             return user;
         } catch (error: any) {
-            console.error(`Error fetching profile for user ${params.id}:`, error);
-             if (error.code === 'P2025') { // P2025 is Prisma's code for "Record to update not found." (also applies to findUniqueOrThrow)
-                 throw new HTTPException(404, { message: `User with ID ${params.id} not found.` });
+            console.error(`Error fetching profile for user ${userId}:`, error);
+             if (error.code === 'P2025') { 
+                 throw new HTTPException(404, { message: `User with ID ${userId} not found.` });
              }
-            // Otherwise, it's likely a different database issues
             throw new HTTPException(500, { message: 'Database error fetching user profile.', cause: error });
         }
     }
 
     async updateUserProfile(params: UserIdParam, input: UpdateUserInput, authenticatedUserId: string) {
         const targetUserId = params.id;
-        console.log(`Attempting to update profile for user ID: ${targetUserId} by user: ${authenticatedUserId}`);
+        console.log(`Attempting profile update for user ID: ${targetUserId} by authenticated user: ${authenticatedUserId}`);
 
         if (authenticatedUserId !== targetUserId) {
-            console.warn(`Authorization failed: User ${authenticatedUserId} tried to update profile of ${targetUserId}`);
-            throw new HTTPException(403, { message: 'You are not authorized to update this profile.' }); // 403 Forbidden
+            console.warn(`Authorization Failed: User ${authenticatedUserId} attempted to update profile of ${targetUserId}.`);
+            throw new HTTPException(403, { message: 'You are not authorized to update this profile.' });
+        }
+
+        if (Object.keys(input).length === 0) {
+             throw new HTTPException(400, { message: 'No update data provided.' });
         }
 
         try {
@@ -59,23 +70,23 @@ export class UserService {
                 data: {
                     ...(input.name !== undefined && { name: input.name }),
                     ...(input.bio !== undefined && { bio: input.bio }),
-                    ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }), 
+                    ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }),
                 },
-                select: { 
+                select: {
                     id: true,
                     email: true,
                     name: true,
                     bio: true,
                     avatarUrl: true,
                     createdAt: true,
-                    updatedAt: true, 
+                    updatedAt: true,
                 }
             });
             console.log(`Successfully updated profile for user ID: ${targetUserId}`);
             return updatedUser;
         } catch (error: any) {
             console.error(`Error updating profile for user ${targetUserId}:`, error);
-             if (error.code === 'P2025') { // P2025: "Record to update not found."
+             if (error.code === 'P2025') { 
                  throw new HTTPException(404, { message: `User with ID ${targetUserId} not found.` });
              }
             throw new HTTPException(500, { message: 'Database error updating user profile.', cause: error });
